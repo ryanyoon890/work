@@ -87,6 +87,7 @@ class Ui_Dialog(object):
                 break
             if time_now.strftime("%Y-%m-%d") == value.strftime("%Y-%m-%d"):
                 print("True")
+                ws.Cells(cell,17).value
                 register = ws.Cells(cell, 3).value
                 customer = ws.Cells(cell, 9).value
                 info = ws.Cells(cell, 17).value
@@ -100,6 +101,7 @@ class Ui_Dialog(object):
                 print(register)
                 cell2 += 1
             else:
+                ws.Cells(cell,17).value
                 print("False")
             cell += 1
 
@@ -125,6 +127,24 @@ class Ui_Dialog(object):
             else:
                 print("False")
             cell += 1
+        
+         # 4열(접수내용) 기준 중복값이 있으면, 5열(처리내용)에 '트래킹'이 포함된 행만 남기고 나머지 삭제
+        last_row = new_ws.Cells(new_ws.Rows.Count, 1).End(-4162).Row  # -4162는 xlUp
+        seen = dict()  # {접수내용: (row, content)}
+        for row in range(last_row, 1, -1):  # 2행부터 시작, 역순
+            key = new_ws.Cells(row, 4).value  # 4번째 컬럼(접수내용)
+            content = new_ws.Cells(row, 5).value  # 5번째 컬럼(처리내용)
+            if key in seen:
+                # 이미 같은 접수내용이 있으면, 둘 중 '트래킹'이 포함된 것만 남김
+                prev_row, prev_content = seen[key]
+                # 현재 행에 '트래킹'이 있으면 이전 행 삭제, 아니면 현재 행 삭제
+                if content and "트래킹" in str(content):
+                    new_ws.Rows(prev_row).Delete()
+                    seen[key] = (row, content)
+                else:
+                    new_ws.Rows(row).Delete()
+            else:
+                seen[key] = (row, content)
 
         new_ws.Columns("A:E").AutoFit()
 

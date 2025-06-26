@@ -35,23 +35,30 @@ def play_bgm():
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(400, 368)
+        Dialog.resize(600, 500)
         self.pushButton = QtWidgets.QPushButton(Dialog)
-        self.pushButton.setGeometry(QtCore.QRect(10, 10, 381, 251))
+        self.pushButton.setGeometry(QtCore.QRect(10, 10, 581, 351))
         self.pushButton.setIconSize(QtCore.QSize(30, 50))
         self.pushButton.setCheckable(False)
         self.pushButton.setObjectName("pushButton")
         self.textBrowser = QtWidgets.QTextBrowser(Dialog)
-        self.textBrowser.setGeometry(QtCore.QRect(20, 280, 251, 81))
+        self.textBrowser.setGeometry(QtCore.QRect(20, 380, 351, 101))
         self.textBrowser.setObjectName("textBrowser")
+        self.pwLabel = QtWidgets.QLabel(Dialog)
+        self.pwLabel.setGeometry(QtCore.QRect(400, 360, 120, 20))
+        self.pwLabel.setText("송신자 비밀번호")
+        self.pwEdit = QtWidgets.QLineEdit(Dialog)
+        self.pwEdit.setGeometry(QtCore.QRect(400, 380, 180, 20))
+        self.pwEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.pwEdit.setPlaceholderText("비밀번호 입력")
         self.emailLabel = QtWidgets.QLabel(Dialog)
-        self.emailLabel.setGeometry(QtCore.QRect(280, 280, 100, 20))
+        self.emailLabel.setGeometry(QtCore.QRect(400, 410, 150, 20))
         self.emailLabel.setText("수신자 이메일(,로 구분)")
         self.emailEdit = QtWidgets.QLineEdit(Dialog)
-        self.emailEdit.setGeometry(QtCore.QRect(280, 300, 110, 20))
+        self.emailEdit.setGeometry(QtCore.QRect(400, 430, 180, 20))
         self.emailEdit.setPlaceholderText("aaa@bbb.com,ccc@ddd.com")
         self.sendButton = QtWidgets.QPushButton(Dialog)
-        self.sendButton.setGeometry(QtCore.QRect(280, 330, 110, 30))
+        self.sendButton.setGeometry(QtCore.QRect(400, 460, 180, 30))
         self.sendButton.setText("이메일 전송")
         self.sendButton.clicked.connect(self.send_email_with_table)
 
@@ -63,7 +70,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "업무 간단히"))
+        Dialog.setWindowTitle(_translate("Dialog", "업무 간단히 스노우불 해킹V2 _ 이메일딱 _ 엑셀딱"))
         self.pushButton.setText(_translate("Dialog", "딱!"))
         self.pushButton.setFont(QtGui.QFont("Arial", 40, QtGui.QFont.Bold))
         
@@ -183,6 +190,12 @@ class Ui_Dialog(object):
             self.textBrowser.append("수신자 이메일을 입력하세요.")
             return
         to_emails = [e.strip() for e in to_emails.split(",") if e.strip()]
+        
+        # --- 송신자 비밀번호 입력값 가져오기 ---
+        sender_pw = self.pwEdit.text().strip()
+        if not sender_pw:
+            self.textBrowser.append("송신자 비밀번호를 입력하세요.")
+            return
 
         # new_ws의 셀 내용 HTML 테이블로 변환
         new_file_path = '오늘의엑셀.XLS'
@@ -221,16 +234,33 @@ class Ui_Dialog(object):
                     html += f"<td>{value}</td>"
             html += "</tr>"
         html += "</table>"
+        
+        # 이메일 상단에 고정 메시지 추가
+        top_message = (
+            "안녕하십니까 물류기술센터 변승재 주임입니다.<br><br>"
+            "금일 장애 리포트 공유드립니다.<br><br>"
+        )
+
+        # 이메일 하단에 고정 메시지 추가
+        bottom_message = (
+            "<br><br>감사드립니다.<br><br>"
+            "﻿변승재 주임 I 물류기술센터, ㈜신성씨앤에스<br>"
+            "Mob. 010-3789-2621  Email.﻿sjbyon@sinsungcns.com<br><br>"
+            "회계팀 담당. 차선미 차장 I 02-867-2633 I ﻿smcha﻿@sinsungcns.com<br>"
+            "기술팀 담당. 변승재 주임 I 010-3789-2621 I 카톡 실시간 상담. ﻿pf.kakao.com/_kxipdT<br>"
+            "배송팀 담당. 정기섭 과장 I 070-5096-3406 I ﻿ksjeong@sinsungcns.com"
+        )
+
+        email_body = top_message + html + bottom_message
 
         # 이메일 전송
-        sender_email = "hsyoon@sinsungcns.com"  # 본인 이메일로 수정
-        sender_pw = ""        # 앱 비밀번호 등
+        sender_email = "sjbyon@sinsungcns.com"  # 본인 이메일로 수정
 
         msg = MIMEMultipart()
         msg['From'] = sender_email
         msg['To'] = ", ".join(to_emails)
-        msg['Subject'] = "엑셀 처리 결과 자동 발송"
-        msg.attach(MIMEText(html, 'html'))
+        msg['Subject'] = "장애현황 공유드립니다  "+datetime.datetime.now().strftime("%m-%d")
+        msg.attach(MIMEText(email_body, 'html'))
 
         try:
             # Daou Office SMTP 서버 정보

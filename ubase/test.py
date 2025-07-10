@@ -42,14 +42,14 @@ while True:
         # 엑셀 float 날짜 처리 (날짜+시간)
             if isinstance(date_value, float) or isinstance(date_value, int):
                 date_value_dt = datetime(1899, 12, 30) + timedelta(days=float(date_value))
-                setdate = datetime(2022, 4, 1)
+                setdate = datetime(2022, 4, 28)
             else:
                 # 문자열일 경우 (예: '2022-05-18 14:46:00+00:00')
                 date_value_dt = datetime.fromisoformat(str(date_value).replace('Z', '+00:00'))
                 if date_value_dt.tzinfo is not None:
-                    setdate = datetime(2022, 4, 1, tzinfo=date_value_dt.tzinfo)
+                    setdate = datetime(2022, 4, 28, tzinfo=date_value_dt.tzinfo)
                 else:
-                    setdate = datetime(2022, 4, 1)
+                    setdate = datetime(2022, 4, 28)
             if date_value_dt >= setdate:
                 driver.get('https://support.hp.com/kr-ko/check-warranty')
                 WebDriverWait(driver, 5).until(

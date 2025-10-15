@@ -35,7 +35,7 @@ def play_bgm():
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(600, 500)
+        Dialog.resize(600, 540)  # 기존 500 -> 540으로 변경 (예약 버튼이 보이도록)
         self.pushButton = QtWidgets.QPushButton(Dialog)
         self.pushButton.setGeometry(QtCore.QRect(10, 10, 581, 351))
         self.pushButton.setIconSize(QtCore.QSize(30, 50))
@@ -62,6 +62,23 @@ class Ui_Dialog(object):
         self.sendButton.setText("이메일 전송")
         self.sendButton.clicked.connect(self.send_email_with_table)
 
+        # --- 예약 메일 기능 추가 시작 ---
+        # 예약 메일 시간 입력 위젯 추가
+        self.reserveTimeLabel = QtWidgets.QLabel(Dialog)
+        self.reserveTimeLabel.setGeometry(QtCore.QRect(400, 340, 120, 20))
+        self.reserveTimeLabel.setText("예약 발송 시간")
+        self.reserveTimeEdit = QtWidgets.QTimeEdit(Dialog)
+        self.reserveTimeEdit.setGeometry(QtCore.QRect(520, 340, 60, 20))
+        self.reserveTimeEdit.setDisplayFormat("HH:mm")
+        self.reserveTimeEdit.setTime(QtCore.QTime.currentTime())
+
+        # 예약 메일 버튼 추가
+        self.reserveButton = QtWidgets.QPushButton(Dialog)
+        self.reserveButton.setGeometry(QtCore.QRect(400, 495, 180, 30))
+        self.reserveButton.setText("예약 메일 전송")
+        self.reserveButton.clicked.connect(self.reserve_email_with_table)
+        # --- 예약 메일 기능 추가 끝 ---
+
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
@@ -70,7 +87,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "업무 간단히 스노우불 해킹V2 _ 이메일딱 _ 엑셀딱"))
+        Dialog.setWindowTitle(_translate("Dialog", "업무 간단히 스노우불 해킹V2.5 _ 이메일딱 _ 엑셀딱 _ 예약메일딱딱"))
         self.pushButton.setText(_translate("Dialog", "딱!"))
         self.pushButton.setFont(QtGui.QFont("Arial", 40, QtGui.QFont.Bold))
         
@@ -275,6 +292,99 @@ class Ui_Dialog(object):
             self.textBrowser.append("이메일 전송 완료!")
         except Exception as e:
             self.textBrowser.append(f"이메일 전송 실패: {e}")
+
+    # --- 예약 메일 기능 추가 시작 ---
+    def reserve_email_with_table(self):
+        to_emails = self.emailEdit.text().strip()
+        if not to_emails:
+            self.textBrowser.append("수신자 이메일을 입력하세요.")
+            return
+        to_emails = [e.strip() for e in to_emails.split(",") if e.strip()]
+        sender_pw = self.pwEdit.text().strip()
+        if not sender_pw:
+            self.textBrowser.append("송신자 비밀번호를 입력하세요.")
+            return
+        reserve_time = self.reserveTimeEdit.time().toPyTime()
+        now = datetime.datetime.now().time()
+        now_dt = datetime.datetime.now()
+        reserve_dt = now_dt.replace(hour=reserve_time.hour, minute=reserve_time.minute, second=0, microsecond=0)
+        if reserve_dt < now_dt:
+            reserve_dt += datetime.timedelta(days=1)  # 내일로 예약
+        wait_seconds = (reserve_dt - now_dt).total_seconds()
+
+        # --- 예약 메일 본문 미리 생성 (메인스레드에서 Excel 접근) ---
+        new_file_path = '오늘의엑셀.XLS'
+        if not os.path.exists(new_file_path):
+            self.textBrowser.append("오늘의엑셀.XLS 파일이 존재하지 않습니다.")
+            return
+        new_wb = excel.Workbooks.Open(os.path.abspath(new_file_path))
+        new_ws = new_wb.Sheets("대응완료")
+        last_row = new_ws.Cells(new_ws.Rows.Count, 1).End(-4162).Row
+        last_col = new_ws.Cells(1, new_ws.Columns.Count).End(-4159).Column
+        def excel_color_to_hex(color):
+            if color is None or color == 16777215:
+                return None
+            try:
+                color = int(color)
+                r = color & 0xFF
+                g = (color >> 8) & 0xFF
+                b = (color >> 16) & 0xFF
+                return f"#{r:02X}{g:02X}{b:02X}"
+            except Exception:
+                return None
+        html = "<table border='1' cellpadding='4' cellspacing='0' style='border-collapse:collapse;'>"
+        for row in range(1, last_row + 1):
+            html += "<tr>"
+            for col in range(1, last_col + 1):
+                cell = new_ws.Cells(row, col)
+                value = cell.Value if cell.Value is not None else ""
+                color = cell.Interior.Color
+                bgcolor = excel_color_to_hex(color)
+                if bgcolor:
+                    html += f"<td style='background-color:{bgcolor}'>{value}</td>"
+                else:
+                    html += f"<td>{value}</td>"
+            html += "</tr>"
+        html += "</table>"
+        top_message = (
+            "안녕하십니까 물류기술센터 변승재 주임입니다.<br><br>"
+            "금일 장애 리포트 공유드립니다.<br><br>"
+        )
+        bottom_message = (
+            "<br><br>감사드립니다.<br><br>"
+            "﻿변승재 주임 I 물류기술센터, ㈜신성씨앤에스<br>"
+            "Mob. 010-3789-2621  Email.﻿sjbyon@sinsungcns.com<br><br>"
+            "회계팀 담당. 차선미 차장 I 02-867-2633 I ﻿smcha﻿@sinsungcns.com<br>"
+            "기술팀 담당. 변승재 주임 I 010-3789-2621 I 카톡 실시간 상담. ﻿pf.kakao.com/_kxipdT<br>"
+            "배송팀 담당. 정기섭 과장 I 070-5096-3406 I ﻿ksjeong@sinsungcns.com"
+        )
+        email_body = top_message + html + bottom_message
+        # --- 예약 메일 본문 미리 생성 끝 ---
+
+        self.textBrowser.append(f"예약 메일이 {reserve_time.strftime('%H:%M')}에 전송됩니다.")
+        threading.Thread(target=self._send_reserved_email, args=(wait_seconds, to_emails, sender_pw, email_body), daemon=True).start()
+
+    def _send_reserved_email(self, wait_seconds, to_emails, sender_pw, email_body):
+        time.sleep(wait_seconds)
+        sender_email = "hsyoon@sinsungcns.com"
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = ", ".join(to_emails)
+        msg['Subject'] = "장애현황 공유드립니다  "+datetime.datetime.now().strftime("%m-%d")
+        msg.attach(MIMEText(email_body, 'html'))
+        try:
+            smtp_server = "outbound.daouoffice.com"
+            smtp_port = 25
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.ehlo()
+            server.starttls()
+            server.login(sender_email, sender_pw)
+            server.sendmail(sender_email, to_emails, msg.as_string())
+            server.quit()
+            self.textBrowser.append("예약 메일 전송 완료!")
+        except Exception as e:
+            self.textBrowser.append(f"예약 메일 전송 실패: {e}")
+    # --- 예약 메일 기능 추가 끝 ---
 
 if __name__ == "__main__":
     # 배경음 스레드 시작

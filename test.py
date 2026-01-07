@@ -36,6 +36,7 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(600, 540)  # 기존 500 -> 540으로 변경 (예약 버튼이 보이도록)
+        Dialog.setWindowFlags(Dialog.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
         self.pushButton = QtWidgets.QPushButton(Dialog)
         self.pushButton.setGeometry(QtCore.QRect(10, 10, 581, 351))
         self.pushButton.setIconSize(QtCore.QSize(30, 50))
@@ -87,7 +88,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "업무 간단히 스노우불 해킹V2.5 _ 이메일딱 _ 엑셀딱 _ 예약메일딱딱"))
+        Dialog.setWindowTitle(_translate("Dialog", "업무 간단히 스노우불 해킹V2.5.5 _ 이메일딱 _ 엑셀딱 _ 예약메일딱딱"))
         self.pushButton.setText(_translate("Dialog", "딱!"))
         self.pushButton.setFont(QtGui.QFont("Arial", 40, QtGui.QFont.Bold))
         

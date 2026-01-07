@@ -366,7 +366,7 @@ class Ui_Dialog(object):
 
     def _send_reserved_email(self, wait_seconds, to_emails, sender_pw, email_body):
         time.sleep(wait_seconds)
-        sender_email = "hsyoon@sinsungcns.com"
+        sender_email = "sjbyon@sinsungcns.com"
         msg = MIMEMultipart()
         msg['From'] = sender_email
         msg['To'] = ", ".join(to_emails)
